@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #101f23; color: #f2ead6; font-family: 'Trebuchet MS', sans-serif; }
+#app { width: min(1280px, 96vw); margin: 0 auto; }
+.masthead { display: flex; align-items: center; justify-content: space-between; height: 82px; font-size: 11px; letter-spacing: 2px; }
+.masthead a { color: #e4d2a0; text-decoration: none; font-size: 20px; }
+.masthead a span { margin-left: 10px; font-family: Georgia, serif; letter-spacing: 5px; }
+.masthead i { font-style: normal; color: #9daf9b; margin-left: 24px; }
+#game-shell { position: relative; width: 100%; aspect-ratio: 8 / 5; max-height: calc(100vh - 140px); margin: auto; overflow: hidden; border: 1px solid #557069; box-shadow: 0 24px 80px #0006; background: #173d3c; }
+#game, #ui { position: absolute; inset: 0; }
+#game canvas { display: block; image-rendering: pixelated; }
+#ui { pointer-events: none; }
+footer { display: flex; justify-content: space-between; padding: 21px 0; font-size: 10px; letter-spacing: 1.6px; color: #8eaaa3; }

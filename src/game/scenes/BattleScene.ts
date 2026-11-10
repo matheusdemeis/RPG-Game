@@ -6,6 +6,7 @@ import { createCreature, healParty, stats, xpToNext } from '../systems/CreatureS
 import { species, speciesIds } from '../data/creatures';
 import { moves } from '../data/moves';
 import type { Creature } from '../types';
+import { canCapture, captureChance } from '../systems/CaptureSystem';
 
 export class BattleScene extends Phaser.Scene {
   protected ui = new UI();
@@ -37,6 +38,8 @@ export class BattleScene extends Phaser.Scene {
     const index=Number(event.key)-1;
     if(index>=0&&index<4&&this.battle.outcome==='active')this.play(this.battle.act(species[this.battle.player.species].moves[index]!));
     if(event.key==='Escape'&&this.battle.outcome==='active')this.play(this.battle.flee());
+    if(event.key.toLowerCase()==='c'&&this.battle.outcome==='active')this.play(this.battle.capture());
+    if(event.key.toLowerCase()==='t'&&this.battle.outcome==='active')this.play(this.battle.tonic());
     if((event.key==='e'||event.key==='E')&&this.battle.outcome!=='active')this.finish();
   }
   private drawClearing(){
@@ -56,8 +59,14 @@ export class BattleScene extends Phaser.Scene {
     const def=species[c.species],max=stats(c).hp,ratio=c.hp/max;
     return `<section class="battle-status ${side}" aria-label="${side==='ally'?'Your':'Wild'} ${def.name}"><div><strong>${def.name}</strong><span>Lv. ${c.level}</span></div><small class="type ${def.element.toLowerCase()}">${def.element}</small><div class="hp-row"><span>HP</span><div class="hp-track"><i style="width:${ratio*100}%;background:${ratio<.25?'#ce785f':ratio<.5?'#d2b26a':'#88b77b'}"></i></div><b>${c.hp} / ${max}</b></div>${side==='ally'?`<div class="xp-track"><i style="width:${c.xp/xpToNext(c.level)*100}%"></i></div>`:''}</section>`;
   }
-  protected extraActions():string{return '';}
-  protected bindExtraActions(){}
+  protected extraActions():string{
+    const chance=Math.round(captureChance(this.battle.wild)*100);
+    return `${button('capture',`Prism ×${this.session.state.inventory.prisms} <small>${chance}%</small> <kbd>C</kbd>`,this.busy||!canCapture(this.session.state,this.battle.wild)?'disabled':'')}${button('tonic',`Tonic ×${this.session.state.inventory.tonics} <kbd>T</kbd>`,this.busy||this.session.state.inventory.tonics<=0||this.battle.player.hp===stats(this.battle.player).hp?'disabled':'')}`;
+  }
+  protected bindExtraActions(){
+    this.ui.on('capture',()=>{if(!this.busy)this.play(this.battle.capture());});
+    this.ui.on('tonic',()=>{if(!this.busy)this.play(this.battle.tonic());});
+  }
   protected render(){
     const active=this.battle.outcome==='active',disabled=this.busy?'disabled':'';
     this.playerSprite.setTexture(this.battle.player.species);

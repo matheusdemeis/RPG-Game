@@ -89,3 +89,9 @@ h1 span { display: block; color: #d8c88e; }
 .move-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6em; align-content:center; }
 .move { text-align:left; padding:.8em; background:#2c4f43; }.move small { display:block; font-size:.52em; margin-top:.5em; color:#c4cbb0; }.move span { font-size:.85em; }.move span>b { margin-left:.5em; }.move.fire { border-left:3px solid #d39464; }.move.water { border-left:3px solid #77b8bf; }.move.nature { border-left:3px solid #9cb66f; }.move.neutral { border-left:3px solid #c8bd92; }
 .finish { grid-column:span 2; }
+.journal { width:80%; }
+.quest-note { font-size:.8em; padding:.7em 1em; border-left:2px solid #d1bf83; background:#ffffff05; }
+.inventory { display:flex; gap:2em; padding:.8em 0; font-size:.7em; color:#bac9af; }.inventory b { color:#e6d8a6; margin-left:.7em; }
+.party-list { max-height:21em; overflow-y:auto; margin:1em 0; }
+.party-member { display:flex; gap:1em; align-items:center; padding:.7em .4em; border-bottom:1px solid #7c95654a; }.party-member img { width:5.5em; image-rendering:pixelated; }.party-member>div { flex:1; }.party-member strong { font:1.2em Georgia,serif; }.party-member strong small { font:.6em 'Trebuchet MS',sans-serif; margin-left:.5em; color:#b4c5a5; }.party-member p { font-size:.68em; margin:.4em 0; }.party-member>div>small { font-size:.55em; color:#9cb89b; }.party-member button { font-size:.7em; }
+.journal-actions { display:flex; gap:.5em; margin-top:1em; }.journal-actions button { font-size:.8em; margin:0; }.journal-tip { display:block; margin-top:1em; color:#9eb49a; font-size:.6em; }

@@ -3,8 +3,9 @@ import { species } from '../data/creatures';
 import { moves, type Move } from '../data/moves';
 import { activeCreature, gainExperience, stats } from './CreatureSystem';
 import { advanceQuest } from './QuestSystem';
+import { canCapture, captureChance } from './CaptureSystem';
 
-export type BattleOutcome = 'active' | 'victory' | 'defeat' | 'escaped';
+export type BattleOutcome = 'active' | 'victory' | 'captured' | 'defeat' | 'escaped';
 export function effectiveness(attack:Element|null,defense:Element):number {
   if(!attack||attack===defense)return 1;
   return ({Fire:'Nature',Nature:'Water',Water:'Fire'} as const)[attack]===defense?1.6:.65;
@@ -28,9 +29,11 @@ export class BattleSystem {
     const logs:string[]=[];
     for(const actor of turnOrder(this.player,this.wild)) {
       if(this.outcome!=='active')break;
+      const originalLead=this.state.activeUid;
       if(actor==='player')this.strike(this.player,this.wild,move,logs);
       else this.wildTurn(logs);
       this.checkEnd(logs);
+      if(this.state.activeUid!==originalLead)break;
     }
     return logs;
   }
@@ -62,4 +65,23 @@ export class BattleSystem {
     logs.push(`${species[this.player.species].name} gained ${xp} experience.${levels?` Level ${this.player.level}!`:''}`);
   }
   flee():string[] { if(this.outcome!=='active')return [];this.outcome='escaped';return ['You slipped back into the trees. There will be other chances.']; }
+  capture():string[] {
+    if(this.outcome!=='active')return [];
+    if(!canCapture(this.state,this.wild))return ['You cannot offer a prism now. Check your supplies and collection space.'];
+    this.state.inventory.prisms--;
+    const logs:string[]=[];
+    if(this.random()<captureChance(this.wild)){
+      this.outcome='captured';this.state.creatures.push({...this.wild});
+      logs.push(`The prism rings clear. ${species[this.wild.species].name} chose to join you!`);this.reward(logs);
+    }else{logs.push('A flicker, a chime… the wild creature slipped free!');this.wildTurn(logs);this.checkEnd(logs);}
+    return logs;
+  }
+  tonic():string[] {
+    if(this.outcome!=='active')return [];
+    const missing=stats(this.player).hp-this.player.hp;
+    if(this.state.inventory.tonics<=0||missing<=0)return ['A tonic cannot be used right now.'];
+    this.state.inventory.tonics--;const amount=Math.min(30,missing);this.player.hp+=amount;
+    const logs=[`${species[this.player.species].name} recovered ${amount} HP with a meadow tonic.`];
+    this.wildTurn(logs);this.checkEnd(logs);return logs;
+  }
 }

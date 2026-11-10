@@ -6,7 +6,7 @@ import type { Facing } from '../types';
 import { UI, button } from '../ui/UI';
 import { DialogueSystem } from '../systems/DialogueSystem';
 import { EncounterSystem } from '../systems/EncounterSystem';
-import { activeCreature, createCreature, healParty } from '../systems/CreatureSystem';
+import { activeCreature, chooseLead, createCreature, healParty, stats, xpToNext } from '../systems/CreatureSystem';
 import { advanceQuest, objectives } from '../systems/QuestSystem';
 import { species, speciesIds } from '../data/creatures';
 import { creatureImage } from '../art/creatures';
@@ -116,7 +116,10 @@ export class WorldScene extends Phaser.Scene {
     this.ui.on('advance',()=>{this.dialogue.advance();if(this.dialogue.active)this.renderDialogue();else if(!this.modal)this.renderHud();});
   }
   protected openMenu(){
-    this.modal=true;this.ui.render(`${this.hud()}<div class="scrim"><section class="modal journal"><div class="eyebrow">FIELD NOTES / AURALIS</div><h2>Your journey</h2><p>Find Dr. Liora outside the laboratory. Head north to explore Whispering Trail.</p>${button('close','Return to the trail','class="primary"')}${button('title','Title screen')}</section></div>`);
+    this.modal=true;
+    const state=this.session.state;
+    this.ui.render(`${this.hud()}<div class="scrim"><section class="modal journal"><div class="eyebrow">FIELD NOTES / AURALIS</div><h2>Your traveling companions</h2><p class="quest-note">✦ ${objectives[state.quest]}</p><div class="inventory"><span>Echo Prisms <b>${state.inventory.prisms}</b></span><span>Meadow tonics <b>${state.inventory.tonics}</b></span><span>Battles resolved <b>${state.battlesWon}</b></span></div><div class="party-list">${state.creatures.length?state.creatures.map(c=>{const s=species[c.species],st=stats(c),lead=state.activeUid===c.uid;return `<div class="party-member"><img src="${creatureImage(this,c.species)}" alt="${s.name}"><div><strong>${s.name} <small>Lv. ${c.level} · ${s.element}</small></strong><p>HP ${c.hp}/${st.hp} · ATK ${st.attack} · DEF ${st.defense} · SPD ${st.speed}</p><small>EXP ${c.xp}/${xpToNext(c.level)} · ${s.moves.map(m=>m==='nest'?'Take Root':m).join(' / ')}</small></div>${button(`lead-${c.uid}`,lead?'Leading':c.hp<=0?'Resting':'Make lead',lead||c.hp<=0?'disabled':'')}</div>`;}).join(''):'<p>Your first companion is waiting with Dr. Liora.</p>'}</div><div class="journal-actions">${button('close','Return to the trail','class="primary"')}${button('title','Title screen')}</div><small class="journal-tip">Visit Dr. Liora for free healing. A healthy companion takes over if your leader faints.</small></section></div>`);
     this.ui.on('close',()=>{this.modal=false;this.renderHud();});this.ui.on('title',()=>this.scene.start('Title'));this.ui.focus();
+    for(const c of state.creatures)this.ui.on(`lead-${c.uid}`,()=>{chooseLead(state,c.uid);this.openMenu();});
   }
 }

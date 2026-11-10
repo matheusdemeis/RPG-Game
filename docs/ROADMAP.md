@@ -37,9 +37,8 @@ Local development only. Original code-authored pixel art; no external game asset
 | `ef93a75` | Complete crystal quest and validated local save/continue   |
 | `c112cc6` | Title art, reduced motion, keyboard accessibility          |
 | `6cc957a` | Consistent source/test formatting                          |
-
-| `06fc8b5` | Original crystal favicon |
-| `0297c2c` | Remove obsolete scaffold-only assertion |
+| `06fc8b5` | Original crystal favicon                                   |
+| `0297c2c` | Remove obsolete scaffold-only assertion                    |
 
 ## Remaining / next milestone
 

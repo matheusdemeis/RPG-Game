@@ -3,7 +3,7 @@
 - [x] Foundation and overworld: two areas, collision, movement, dialogue.
 - [x] Creatures and battles: starters, encounters, combat, defeat recovery.
 - [x] Capture and progression: collection, party, experience, inventory.
-- [ ] Story and persistence: crystal quest, versioned saves, continue.
+- [x] Story and persistence: crystal quest, versioned saves, continue.
 - [ ] Quality: logic tests, production build, keyboard/browser verification.
 
 Local development only. Original code-authored pixel art; no external game assets.
@@ -17,3 +17,6 @@ Local development only. Original code-authored pixel art; no external game asset
   Sixteen tests pass; Chrome completed starter selection, travel, and a wild victory.
 - Capture: health-based probability, finite prisms/tonics, party lead selection, automatic
   fainted-leader replacement. Twenty-three tests pass. Browser verified failed and successful capture.
+- Story/save: complete crystal investigation and report, repeat-safe rewards, manual local
+  save, continue, new-game confirmation, corruption/storage handling. Thirty-six tests pass.
+  Chrome completed the entire chapter and verified party/items/position after page reload.

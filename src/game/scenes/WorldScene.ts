@@ -10,6 +10,8 @@ import { activeCreature, chooseLead, createCreature, healParty, stats, xpToNext 
 import { advanceQuest, objectives } from '../systems/QuestSystem';
 import { species, speciesIds } from '../data/creatures';
 import { creatureImage } from '../art/creatures';
+import { moves } from '../data/moves';
+import { saveGame } from '../systems/SaveSystem';
 
 export class WorldScene extends Phaser.Scene {
   protected session!: GameSession;
@@ -22,9 +24,11 @@ export class WorldScene extends Phaser.Scene {
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private interactHint = '';
   private encounters = new EncounterSystem();
+  private saveMessage = '';
   constructor() { super('World'); }
   create() {
     this.session = this.registry.get('session') as GameSession;
+    this.saveMessage = '';
     this.area = areas[this.session.state.player.map];
     this.moving = false; this.modal = false; this.dialogue = new DialogueSystem(); this.interactHint = '';
     this.encounters = new EncounterSystem();
@@ -85,18 +89,40 @@ export class WorldScene extends Phaser.Scene {
     const target=this.nearby();
     if(target?.npc)this.talk(target.npc);
     else if(target?.kind==='sign')this.say('Trail sign',[this.area.id==='willowmere'?'NORTH — Whispering Trail. Listen closely. Leave only footprints.':'SOUTH — Willowmere Village. Dr. Liora welcomes weary companions.']);
-    else if(target?.kind==='crystal')this.say('A strange resonance',['The crystal hums like a half-remembered melody. Its light pulses beneath your fingertips.']);
+    else if(target?.kind==='crystal')this.investigateCrystal();
+  }
+  private investigateCrystal(){
+    const state=this.session.state;
+    if(state.quest==='meet'){this.say('A strange resonance',['The crystal sings, but you cannot make sense of it. Perhaps the researcher in Willowmere can help.']);return;}
+    if(state.quest==='explore'){this.say('A strange resonance',['Your companion is uneasy. Spend time with a wild creature first: win a battle or offer it an Echo Prism.']);return;}
+    if(state.quest==='investigate'){
+      this.cameras.main.flash(400,189,213,230);
+      this.say('The crystal’s song',['Your companion steps forward. The crystal answers with a clear, trembling note.','Beneath the stone lies a root, wrapped around a shard of pale light. The crystal isn’t hurting the forest. It’s calling for help.','You carefully collect a fallen shard. Liora will know what to make of this.'],()=>{
+        state.quest=advanceQuest(state.quest,'crystal');this.renderHud();
+      });return;
+    }
+    this.say('The crystal’s song',[state.quest==='return'?'The crystal’s melody feels calmer now. Bring the fallen shard back to Dr. Liora.':'A soft note greets you. Somewhere far beyond the trail, another crystal answers.']);
   }
   protected talk(npc:NpcData) {
     if(npc.id==='researcher'){
       if(!this.session.state.starter){this.say(npc.name,['There you are! I’m Liora. I study the echoes that connect every living thing in Auralis.','Strange crystals are troubling the creatures on Whispering Trail. Will you help me listen?','You’ll need a friend for the journey. These three have been waiting to meet you.'],()=>this.chooseStarter());return;}
       healParty(this.session.state);
+      this.session.state.inventory.prisms=Math.max(3,this.session.state.inventory.prisms);
+      this.session.state.inventory.tonics=Math.max(1,this.session.state.inventory.tonics);
+      if(this.session.state.quest==='return'){
+        this.say(npc.name,['A shard… and a root? Then the crystals are carrying a message through the forest.','All this time, I thought the wild creatures were frightened. Perhaps they’ve been trying to answer. You listened when the rest of us couldn’t.','This is only the first note of a much older song. For now, you and your companions have earned a little rest.'],()=>{
+          this.session.state.quest=advanceQuest(this.session.state.quest,'report');
+          this.session.state.inventory.prisms=Math.min(999,this.session.state.inventory.prisms+5);this.session.state.inventory.tonics=Math.min(999,this.session.state.inventory.tonics+2);
+          this.say('Chapter one complete',['THE CRYSTAL DISTURBANCE — complete. You received 5 Echo Prisms and 2 meadow tonics.','The trail is yours to explore. Befriend new companions, train your party, and save your journey from the journal.']);
+        });return;
+      }
+      if(this.session.state.quest==='complete'){this.say(npc.name,['Your companions are healed, and I’ve topped up your supplies.','The shard still hums when you’re near. I wonder what other songs Auralis is waiting to share.']);return;}
       this.say(npc.name,['Welcome back! Let me tend to your companions. There, good as new.','The crystal is in the clearing at the far north of Whispering Trail. Follow the path, and be kind to the wild creatures.']);return;
     }
     const lines:Record<NpcData['id'],string[]>={
       researcher:['There you are! I’m Liora. I study the echoes that connect every living thing in Auralis.','Something has changed on Whispering Trail. Crystals are growing where the old trees used to sing.'],
       resident:['My grandmother said the forest remembers every kind thing we do.','I leave flowers by the pond. A little kindness never hurt a mysterious forest.'],
-      ranger:['Welcome to Whispering Trail! Wild companions hide in the deep grass.','The northern clearing has been glowing all night. Take care up there.'],
+      ranger:['Welcome to Whispering Trail! Wild companions hide in the deep grass.','Fire warms Nature, Nature drinks Water, and Water cools Fire. A good explorer learns when to use each move.','Lower a wild creature’s HP to improve a prism’s chance. A failed offer costs a turn. You can always leave a battle safely.','Need healing or supplies? Dr. Liora will help. The crystal is straight north of here.'],
     };
     this.say(npc.name,lines[npc.id]);
   }
@@ -116,10 +142,13 @@ export class WorldScene extends Phaser.Scene {
     this.ui.on('advance',()=>{this.dialogue.advance();if(this.dialogue.active)this.renderDialogue();else if(!this.modal)this.renderHud();});
   }
   protected openMenu(){
+    if(this.moving||this.dialogue.active)return;
     this.modal=true;
     const state=this.session.state;
-    this.ui.render(`${this.hud()}<div class="scrim"><section class="modal journal"><div class="eyebrow">FIELD NOTES / AURALIS</div><h2>Your traveling companions</h2><p class="quest-note">✦ ${objectives[state.quest]}</p><div class="inventory"><span>Echo Prisms <b>${state.inventory.prisms}</b></span><span>Meadow tonics <b>${state.inventory.tonics}</b></span><span>Battles resolved <b>${state.battlesWon}</b></span></div><div class="party-list">${state.creatures.length?state.creatures.map(c=>{const s=species[c.species],st=stats(c),lead=state.activeUid===c.uid;return `<div class="party-member"><img src="${creatureImage(this,c.species)}" alt="${s.name}"><div><strong>${s.name} <small>Lv. ${c.level} · ${s.element}</small></strong><p>HP ${c.hp}/${st.hp} · ATK ${st.attack} · DEF ${st.defense} · SPD ${st.speed}</p><small>EXP ${c.xp}/${xpToNext(c.level)} · ${s.moves.map(m=>m==='nest'?'Take Root':m).join(' / ')}</small></div>${button(`lead-${c.uid}`,lead?'Leading':c.hp<=0?'Resting':'Make lead',lead||c.hp<=0?'disabled':'')}</div>`;}).join(''):'<p>Your first companion is waiting with Dr. Liora.</p>'}</div><div class="journal-actions">${button('close','Return to the trail','class="primary"')}${button('title','Title screen')}</div><small class="journal-tip">Visit Dr. Liora for free healing. A healthy companion takes over if your leader faints.</small></section></div>`);
-    this.ui.on('close',()=>{this.modal=false;this.renderHud();});this.ui.on('title',()=>this.scene.start('Title'));this.ui.focus();
+    this.ui.render(`${this.hud()}<div class="scrim"><section class="modal journal"><div class="eyebrow">FIELD NOTES / AURALIS</div><h2>Your traveling companions</h2><p class="quest-note">✦ ${objectives[state.quest]}</p><div class="inventory"><span>Echo Prisms <b>${state.inventory.prisms}</b></span><span>Meadow tonics <b>${state.inventory.tonics}</b></span><span>Battles resolved <b>${state.battlesWon}</b></span></div><div class="party-list">${state.creatures.length?state.creatures.map(c=>{const s=species[c.species],st=stats(c),lead=state.activeUid===c.uid;return `<div class="party-member"><img src="${creatureImage(this,c.species)}" alt="${s.name}"><div><strong>${s.name} <small>Lv. ${c.level} · ${s.element}</small></strong><p>HP ${c.hp}/${st.hp} · ATK ${st.attack} · DEF ${st.defense} · SPD ${st.speed}</p><small>EXP ${c.xp}/${xpToNext(c.level)} · ${s.moves.map(m=>moves[m]!.name).join(' / ')}</small></div>${button(`lead-${c.uid}`,lead?'Leading':c.hp<=0?'Resting':'Make lead',lead||c.hp<=0?'disabled':'')}</div>`;}).join(''):'<p>Your first companion is waiting with Dr. Liora.</p>'}</div><div class="journal-actions">${button('close','Return to the trail','class="primary"')}${button('save','Save journey')}${button('title','Save & title')}</div><p class="save-status" role="status">${this.saveMessage||'Your journey is saved only when you choose Save. Keep playing after the chapter ends.'}</p><small class="journal-tip">Visit Dr. Liora for free healing and supplies. A healthy companion takes over if your leader faints.</small></section></div>`);
+    this.ui.on('close',()=>{this.modal=false;this.renderHud();});
+    this.ui.on('save',()=>{this.saveMessage=saveGame(state).message;this.openMenu();});
+    this.ui.on('title',()=>{const result=saveGame(state);if(result.ok)this.scene.start('Title');else{this.saveMessage=result.message;this.openMenu();}});this.ui.focus();
     for(const c of state.creatures)this.ui.on(`lead-${c.uid}`,()=>{chooseLead(state,c.uid);this.openMenu();});
   }
 }

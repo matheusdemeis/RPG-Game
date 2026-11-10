@@ -12,6 +12,7 @@ import { species, speciesIds } from '../data/creatures';
 import { creatureImage } from '../art/creatures';
 import { moves } from '../data/moves';
 import { saveGame } from '../systems/SaveSystem';
+import { reducedMotion } from '../art/motion';
 
 export class WorldScene extends Phaser.Scene {
   protected session!: GameSession;
@@ -37,9 +38,10 @@ export class WorldScene extends Phaser.Scene {
     const p = this.session.state.player;
     this.player = this.add.image(p.x*TILE+16,p.y*TILE+30,`player-${p.facing}-0`).setOrigin(0.5,1).setDepth(p.y*TILE+31);
     this.cameras.main.setBounds(0,0,WIDTH*TILE,HEIGHT*TILE).startFollow(this.player,true,0.15,0.15);
-    this.cameras.main.fadeIn(350,18,40,39);
+    this.cameras.main.fadeIn(reducedMotion()?0:350,18,40,39);
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,ESC,TAB') as Record<string, Phaser.Input.Keyboard.Key>;
     this.input.keyboard!.addCapture(['UP','DOWN','LEFT','RIGHT','SPACE']);
+    this.input.keyboard!.removeCapture('TAB');
     this.renderHud();
     this.time.addEvent({ delay:1000, loop:true, callback:()=>{ this.session.state.playSeconds++; } });
     this.events.once('shutdown',()=> { this.ui.clear(); this.input.keyboard!.removeAllKeys(true); });
@@ -49,7 +51,8 @@ export class WorldScene extends Phaser.Scene {
     const pressed = (key: string) => Phaser.Input.Keyboard.JustDown(this.keys[key]!);
     const interact = pressed('E') || pressed('SPACE');
     if (this.dialogue.active) { if (interact) { this.dialogue.advance(); if(this.dialogue.active)this.renderDialogue();else if(!this.modal)this.renderHud(); } return; }
-    if (pressed('ESC') || pressed('TAB')) { if(this.modal){this.modal=false;this.renderHud();}else this.openMenu(); return; }
+    if (pressed('ESC')) { if(this.modal){this.modal=false;this.renderHud();}else this.openMenu(); return; }
+    if (pressed('TAB') && !this.modal) { this.openMenu(); return; }
     if (this.modal) return;
     if (interact) { this.interact(); return; }
     const down=(...keys:string[])=>keys.some(k=>this.keys[k]!.isDown);
@@ -96,7 +99,7 @@ export class WorldScene extends Phaser.Scene {
     if(state.quest==='meet'){this.say('A strange resonance',['The crystal sings, but you cannot make sense of it. Perhaps the researcher in Willowmere can help.']);return;}
     if(state.quest==='explore'){this.say('A strange resonance',['Your companion is uneasy. Spend time with a wild creature first: win a battle or offer it an Echo Prism.']);return;}
     if(state.quest==='investigate'){
-      this.cameras.main.flash(400,189,213,230);
+      if(!reducedMotion())this.cameras.main.flash(400,189,213,230);
       this.say('The crystal’s song',['Your companion steps forward. The crystal answers with a clear, trembling note.','Beneath the stone lies a root, wrapped around a shard of pale light. The crystal isn’t hurting the forest. It’s calling for help.','You carefully collect a fallen shard. Liora will know what to make of this.'],()=>{
         state.quest=advanceQuest(state.quest,'crystal');this.renderHud();
       });return;

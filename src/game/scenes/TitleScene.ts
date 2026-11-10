@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
-import { areas } from '../data/maps';
-import { drawWorld } from '../art/world';
+import { drawTitle } from '../art/title';
+import { reducedMotion } from '../art/motion';
 import { UI, button } from '../ui/UI';
 import { GameSession } from '../state/GameSession';
 import { loadGame } from '../systems/SaveSystem';
@@ -9,10 +9,8 @@ export class TitleScene extends Phaser.Scene {
   private ui = new UI();
   constructor() { super('Title'); }
   create() {
-    drawWorld(this, areas.willowmere);
-    this.cameras.main.setScroll(175,120);
-    this.cameras.main.setZoom(1.15);
-    this.cameras.main.fadeIn(700,15,36,36);
+    drawTitle(this);
+    this.cameras.main.fadeIn(reducedMotion()?0:700,15,36,36);
     this.renderTitle();
     this.events.once('shutdown',()=>this.ui.clear());
   }

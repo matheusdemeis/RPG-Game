@@ -7,6 +7,7 @@ import { species, speciesIds } from '../data/creatures';
 import { moves } from '../data/moves';
 import type { Creature } from '../types';
 import { canCapture, captureChance } from '../systems/CaptureSystem';
+import { reducedMotion } from '../art/motion';
 
 export class BattleScene extends Phaser.Scene {
   protected ui = new UI();
@@ -25,9 +26,9 @@ export class BattleScene extends Phaser.Scene {
     this.drawClearing();
     this.playerSprite=this.add.image(260,368,this.battle.player.species).setScale(6).setOrigin(.5,1);
     this.wildSprite=this.add.image(700,246,wild.species).setScale(4.6).setOrigin(.5,1).setFlipX(true);
-    this.tweens.add({targets:[this.playerSprite,this.wildSprite],y:'-=5',duration:1600,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    if(!reducedMotion())this.tweens.add({targets:[this.playerSprite,this.wildSprite],y:'-=5',duration:1600,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     this.message=`A wild ${species[wild.species].name} emerges from the whispering grass!`;
-    this.cameras.main.fadeIn(350,24,51,40);
+    this.cameras.main.fadeIn(reducedMotion()?0:350,24,51,40);
     this.render();
     const keyboard=this.input.keyboard!;
     keyboard.on('keydown',this.onKey,this);
@@ -78,7 +79,7 @@ export class BattleScene extends Phaser.Scene {
   protected play(lines:string[]){
     if(!lines.length)return;
     this.busy=true;
-    this.tweens.add({targets:this.wildSprite,alpha:.35,duration:90,yoyo:true,repeat:1});
+    if(!reducedMotion())this.tweens.add({targets:this.wildSprite,alpha:.35,duration:90,yoyo:true,repeat:1});
     let index=0;
     const next=()=>{
       this.message=lines[index++]!;this.render();

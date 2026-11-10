@@ -4,6 +4,18 @@ export class UI {
   render(html: string) {
     this.controller.abort(); this.controller = new AbortController();
     this.root.innerHTML = html;
+    const dialog=this.root.querySelector<HTMLElement>('.modal');
+    if(dialog){
+      dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
+      const heading=dialog.querySelector('h2');if(heading){heading.id='dialog-heading';dialog.setAttribute('aria-labelledby',heading.id);}
+      dialog.addEventListener('keydown',(event:KeyboardEvent)=>{
+        if(event.key!=='Tab')return;
+        const buttons=[...dialog.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+        const first=buttons[0],last=buttons.at(-1);
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+      },{signal:this.controller.signal});
+    }
   }
   on(action: string, callback: () => void) {
     this.root.querySelectorAll<HTMLButtonElement>(`[data-action="${action}"]`).forEach(button => {

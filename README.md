@@ -65,6 +65,8 @@ The journal shows all owned creatures, their stats and experience, and lets you 
 
 Rendering never performs damage or capture calculations. `BattleSystem` accepts a random-number function for deterministic testing. Quest progress is an explicit state machine. Save validation constructs a fresh canonical state and verifies IDs, numeric bounds, walkable positions, and quest/party consistency.
 
+The visual refinement keeps this structure: `art/terrain.ts` bakes decorative borders, planting and shadows from `data/maps/decoration.ts`; `art/characters.ts` generates 48 facing/stride frames; `art/battlefield.ts` stages the forest clearing; and `ui/BattleEffects.ts` presents ordered snapshots emitted by the battle rules. Original graphics are generated locally, with no extra runtime dependencies. Atmosphere and transitions respect reduced motion, and the existing save format and collision geometry are unchanged.
+
 ## Scope and next steps
 
 The first chapter is a complete vertical slice: two exterior areas, three original species, repeatable wild encounters, combat, capture, progression, party management, a quest ending, and local saves. Buildings are scenery; this release has no interiors, trainer battles, evolution, sound/music, online services, or mobile touch controls.

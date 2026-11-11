@@ -48,3 +48,36 @@ Local development only. Original code-authored pixel art; no external game asset
 - Recommended next slice: a third area, one trainer, and a second story objective.
 
 No remote push or deployment has been performed.
+
+## Visual and UX refinement — November 11, 2026
+
+- [x] Terrain: authored planting zones, textured path borders, shoreline reeds and lily pads,
+      timber bridge, canopy silhouettes, cottage detail, and cached ground shadows.
+- [x] Characters: 48 original facing/stride frames, distinct outfits and silhouettes,
+      improved side/back views, and NPCs facing the player during conversations.
+- [x] Battles: layered clearing, entrances, ordered presentation snapshots, animated HP,
+      move selection feedback, hit/heal/miss cues, capture effects, and faint/switch/reward moments.
+- [x] Interface: shared teal/cream surfaces, larger detail text, portraits and dialogue
+      progress, scoped keyboard focus, save feedback, and reduced-motion behavior.
+- [x] Title: refined composition, grounded companions, slow clouds, foreground parallax,
+      crystal ambience, and a guarded fade into the adventure.
+- [x] Verification: 41 tests, strict typecheck, development server, production build,
+      complete Chrome playthroughs, visual review at 1440×1000 and 1280×720, and focus/storage checks.
+
+Gameplay rules, encounter probabilities, collision geometry, content scope, and the version-1
+save format are preserved. No runtime dependencies or external art assets were added.
+Terrain decoration is baked once per map; ambient effects honor reduced motion.
+
+| Commit    | Refinement                                                 |
+| --------- | ---------------------------------------------------------- |
+| `ee17998` | Terrain, planting, scenery details and shadows             |
+| `df73bea` | Character silhouettes, stride frames and NPC facing        |
+| `74be451` | Typed, ordered battle snapshots with six regression tests  |
+| `6bba65f` | Battle staging, feedback and encounter transitions         |
+| `6f105d9` | Consistent panels, readable details and dialogue portraits |
+| `9db4021` | Title atmosphere, parallax and transition polish           |
+| `749b283` | Keep keyboard focus within the active dialog               |
+
+Remaining polish opportunities: more hand-shaped terrain contours, richer creature poses,
+small narrative environmental props, hands-on pacing review, and Safari/Firefox verification.
+These are refinements to the existing slice, not prerequisites for playing the chapter.

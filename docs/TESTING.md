@@ -40,3 +40,27 @@ Still recommended: hands-on pacing/balance playtesting and Safari/Firefox checks
 - Check 1280×720, 1440×900, and 1920×1080. Check browser zoom, button focus, and reduced-motion preference.
 
 Browser QA uses temporary Playwright scripts outside the repository and the installed Chrome binary. Deterministic random rolls are used for specific capture branches; movement, dialogue, battle buttons, quest actions, and save/load run through the real UI. The development build exposes `window.__ECHOWILD__` for inspection; production omits it.
+
+## November 11 visual/UX revision
+
+The current suite contains **41 passing tests**, including six new battle-event tests:
+ordered/detached HP snapshots, final hit → faint → reward sequencing, healing before
+retaliation, misses without damage, capture before experience, and separate fainted/incoming
+party-leader snapshots. Battle rules still return their original text results.
+
+Rechecked `npm run dev`, `npm run typecheck`, `npm run test`, and `npm run build`.
+Chrome completed the revised chapter in development and in the production bundle. The
+production playthrough used normal randomness and verified combat, capture, escape, quest
+completion, and save/reload. No JavaScript runtime errors occurred in the passing checks.
+
+Targeted browser checks also verified:
+
+- HP presentation waits for each combatant's event; inputs remain disabled while a turn resolves.
+- Distinct damage, healing, miss, failed-capture and successful-capture feedback.
+- Dialogue Space advances exactly one line, and portraits/progress remain visible.
+- Journal Tab navigation and Save focus survive panel refreshes without escaping the dialog.
+- Starter selection and journal layout fit at 1280×720; title, both maps and battle art were visually reviewed.
+- Existing corruption/unavailable-storage behavior, defeat recovery, WASD and reduced-motion mode still work.
+
+Manual review remains useful for preferred text speed, long sessions with a large collection,
+and cross-browser rendering. No new audio or mobile control system was introduced.

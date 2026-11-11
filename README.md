@@ -2,27 +2,6 @@
 
 An original, client-side monster-taming RPG set in Auralis. Explore Willowmere Village and Whispering Trail, choose a companion, battle and befriend wild creatures, and discover the meaning of a mysterious crystal's song.
 
-## Run locally
-
-Use **Node.js 24 LTS** (see `.nvmrc`) and npm.
-
-```bash
-nvm install             # optional: install/use the .nvmrc version with nvm
-npm ci
-npm run dev
-```
-
-Open the Local URL printed by Vite (normally **http://127.0.0.1:5173/**).
-
-```bash
-npm run typecheck       # strict TypeScript
-npm test                # pure game-logic tests
-npm run build           # typecheck + production bundle in dist/
-npm run preview         # serve the production bundle locally
-```
-
-No account, API keys, backend, or external asset downloads are required at runtime. Phaser is the only runtime dependency. Dependencies are pinned in `package-lock.json`. The implementation was also checked on the workspace's Node 23.11.0, but Vitest officially supports LTS Node 22/24 rather than Node 23; use Node 24 for development.
-
 ## Play the opening chapter
 
 1. Start a **New journey**. Walk north and slightly left to **Dr. Liora**, outside the blue-roofed laboratory.

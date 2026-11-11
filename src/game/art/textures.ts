@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { generateCharacters } from './characters';
 
 type Ctx = CanvasRenderingContext2D;
 const rect = (c: Ctx, color: string, x: number, y: number, w: number, h: number) => {
@@ -268,57 +269,6 @@ export function generateTextures(scene: Phaser.Scene) {
     rect(c, '#8b7953', 4, 4, 5, 25);
     rect(c, '#cebc8d', 4, 4, 3, 24);
   });
-  for (const skin of ['player', 'researcher', 'resident', 'ranger'])
-    for (const dir of ['down', 'up', 'left', 'right'])
-      for (let frame = 0; frame < 3; frame++) {
-        make(scene, `${skin}-${dir}-${frame}`, 32, 44, (c) => {
-          const step = frame === 1 ? -2 : frame === 2 ? 2 : 0;
-          rect(c, '#466047', 7, 38, 20, 5);
-          rect(c, '#3c3e3b', 9, 31, 6, 8 + step);
-          rect(c, '#3c3e3b', 18, 31, 6, 8 - step);
-          rect(
-            c,
-            skin === 'researcher'
-              ? '#e1dec4'
-              : skin === 'resident'
-                ? '#ac7182'
-                : skin === 'ranger'
-                  ? '#ac9b64'
-                  : '#488b8b',
-            8,
-            20,
-            17,
-            15,
-          );
-          rect(c, '#e0ad7f', 6, 23 + step, 4, 10);
-          rect(c, '#e0ad7f', 24, 23 - step, 4, 10);
-          rect(c, '#654c3b', 8, 7, 17, 16);
-          rect(c, '#e7b98b', 10, 10, 14, 12);
-          rect(c, '#efd0a0', 11, 10, 10, 4);
-          if (dir === 'up') {
-            rect(c, '#654c3b', 9, 10, 16, 13);
-            rect(c, '#b29965', 10, 22, 13, 11);
-            rect(c, '#dac08b', 12, 22, 9, 3);
-          } else {
-            rect(c, '#283c3c', dir === 'left' ? 10 : dir === 'right' ? 21 : 12, 16, 2, 3);
-            if (dir === 'down') rect(c, '#283c3c', 20, 16, 2, 3);
-          }
-          const hat =
-            skin === 'researcher'
-              ? '#d5dbcf'
-              : skin === 'resident'
-                ? '#735644'
-                : skin === 'ranger'
-                  ? '#7e8555'
-                  : '#cfb877';
-          rect(c, hat, 8, 4, 18, 7);
-          rect(c, hat, 4, 10, 25, 4);
-          rect(c, '#f2db9b', 10, 4, 12, 2);
-          if (skin === 'player') {
-            rect(c, '#d9b36b', 8, 20, 17, 3);
-            rect(c, '#d9b36b', 22, 22, 3, 6);
-          }
-        });
-      }
+  generateCharacters(scene);
   make(scene, 'mote', 3, 3, (c) => rect(c, '#eee2a2', 0, 0, 3, 3));
 }

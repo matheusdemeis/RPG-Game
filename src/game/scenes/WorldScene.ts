@@ -33,6 +33,7 @@ export class WorldScene extends Phaser.Scene {
   private interactHint = '';
   private encounters = new EncounterSystem();
   private saveMessage = '';
+  private npcSprites = new Map<string, Phaser.GameObjects.Image>();
   constructor() {
     super('World');
   }
@@ -49,7 +50,7 @@ export class WorldScene extends Phaser.Scene {
       this.encounters.protect(8);
       this.registry.remove('encounterGrace');
     }
-    drawWorld(this, this.area);
+    this.npcSprites = drawWorld(this, this.area);
     const p = this.session.state.player;
     this.player = this.add
       .image(p.x * TILE + 16, p.y * TILE + 30, `player-${p.facing}-0`)
@@ -125,7 +126,12 @@ export class WorldScene extends Phaser.Scene {
       x: p.x * TILE + 16,
       y: p.y * TILE + 30,
       duration: 145,
-      onUpdate: () => this.player.setDepth(this.player.y + 1),
+      onUpdate: (tween: Phaser.Tweens.Tween) => {
+        this.player.setDepth(this.player.y + 1);
+        this.player.setTexture(
+          `player-${facing}-${tween.progress > 0.72 ? 0 : ((p.x + p.y) % 2) + 1}`,
+        );
+      },
       onComplete: () => {
         this.moving = false;
         this.player.setTexture(`player-${facing}-0`);
@@ -226,6 +232,16 @@ export class WorldScene extends Phaser.Scene {
     ]);
   }
   protected talk(npc: NpcData) {
+    const p = this.session.state.player;
+    const facing: Facing =
+      Math.abs(p.x - npc.x) > Math.abs(p.y - npc.y)
+        ? p.x < npc.x
+          ? 'left'
+          : 'right'
+        : p.y < npc.y
+          ? 'up'
+          : 'down';
+    this.npcSprites.get(npc.id)?.setTexture(`${npc.skin}-${facing}-0`);
     if (npc.id === 'researcher') {
       if (!this.session.state.starter) {
         this.say(

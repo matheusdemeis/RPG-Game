@@ -2,6 +2,9 @@ export class DialogueSystem {
   private lines: string[] = [];
   private index = 0;
   speaker = '';
+  get progress() {
+    return `${this.index + 1} / ${this.lines.length}`;
+  }
   private done?: () => void;
   get active() {
     return this.lines.length > 0;

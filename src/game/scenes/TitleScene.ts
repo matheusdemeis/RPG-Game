@@ -7,10 +7,12 @@ import { loadGame } from '../systems/SaveSystem';
 
 export class TitleScene extends Phaser.Scene {
   private ui = new UI();
+  private leaving = false;
   constructor() {
     super('Title');
   }
   create() {
+    this.leaving = false;
     drawTitle(this);
     this.cameras.main.fadeIn(reducedMotion() ? 0 : 700, 15, 36, 36);
     this.renderTitle();
@@ -30,7 +32,7 @@ export class TitleScene extends Phaser.Scene {
     );
     const start = () => {
       (this.registry.get('session') as GameSession).reset();
-      this.scene.start('World');
+      this.enterWorld();
     };
     this.ui.on('new', () => {
       if (!saved.ok) {
@@ -47,9 +49,23 @@ export class TitleScene extends Phaser.Scene {
     this.ui.on('continue', () => {
       if (saved.ok) {
         (this.registry.get('session') as GameSession).state = saved.state;
-        this.scene.start('World');
+        this.enterWorld();
       }
     });
     this.ui.focus();
+  }
+  private enterWorld() {
+    if (this.leaving) return;
+    this.leaving = true;
+    this.ui.root
+      .querySelectorAll<HTMLButtonElement>('button')
+      .forEach((button) => (button.disabled = true));
+    if (reducedMotion()) {
+      this.scene.start('World');
+      return;
+    }
+    this.ui.root.querySelector('.title-screen, .scrim')?.classList.add('departing');
+    this.cameras.main.fadeOut(220, 19, 43, 35);
+    this.cameras.main.once('camerafadeoutcomplete', () => this.scene.start('World'));
   }
 }

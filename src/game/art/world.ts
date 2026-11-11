@@ -1,21 +1,29 @@
 import * as Phaser from 'phaser';
 import { TILE, WIDTH, HEIGHT, type Area } from '../data/maps';
 import { reducedMotion } from './motion';
+import { drawTerrain } from './terrain';
 
 export function drawWorld(scene: Phaser.Scene, area: Area) {
+  const npcSprites = new Map<string, Phaser.GameObjects.Image>();
   const map = scene.make.tilemap({ key: area.id });
   const tiles = map.addTilesetImage('auralis', 'tiles')!;
   map.createLayer('Ground', tiles, 0, 0);
+  drawTerrain(scene, area);
   for (const o of area.objects) {
     const x = (o.x + o.w / 2) * TILE,
       y = (o.y + o.h) * TILE;
-    scene.add.image(x, y, o.kind).setOrigin(0.5, 1).setDepth(y);
+    const scenery = scene.add.image(x, y, o.kind).setOrigin(0.5, 1).setDepth(y);
+    if (o.kind === 'tree')
+      scenery.setFlipX((o.x + o.y) % 3 === 0).setTint((o.x + o.y) % 4 === 0 ? 0xe4edcf : 0xffffff);
+    if (o.kind === 'crystal' && !reducedMotion())
+      scene.tweens.add({ targets: scenery, alpha: 0.78, duration: 2100, yoyo: true, repeat: -1 });
   }
   for (const npc of area.npcs) {
-    scene.add
+    const sprite = scene.add
       .image(npc.x * TILE + 16, npc.y * TILE + 30, `${npc.skin}-down-0`)
       .setOrigin(0.5, 1)
       .setDepth(npc.y * TILE + 31);
+    npcSprites.set(npc.id, sprite);
     scene.add
       .text(npc.x * TILE + 16, npc.y * TILE - 18, npc.id === 'researcher' ? '!' : '…', {
         fontFamily: 'Georgia',
@@ -43,4 +51,5 @@ export function drawWorld(scene: Phaser.Scene, area: Area) {
         repeat: -1,
       });
   }
+  return npcSprites;
 }

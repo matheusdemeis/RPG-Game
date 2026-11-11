@@ -1049,3 +1049,43 @@ kbd {
     transform: none;
   }
 }
+
+.title-menu button {
+  padding: 0.85em 1.2em;
+  border-color: #b9be8677;
+}
+.title-menu button span {
+  transition: transform 0.18s;
+}
+.title-menu button:hover:not(:disabled) span,
+.title-menu button:focus-visible span {
+  transform: translateX(4px);
+}
+.title-note {
+  border-left: 1px solid #adad7166;
+  padding-left: 1em;
+}
+.title-stamp {
+  bottom: 4%;
+  right: 4%;
+  padding: 0.65em 1em;
+  border-right: 1px solid #d2d8a25e;
+  background: linear-gradient(90deg, transparent, #183d3044);
+  text-shadow: 0 1px 2px #264b37;
+}
+.title-stamp small {
+  margin-top: 0.5em;
+}
+.title-screen,
+.scrim {
+  transition: opacity 0.22s;
+}
+.departing {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-menu button:hover:not(:disabled) span,
+  .title-menu button:focus-visible span {
+    transform: none;
+  }
+}

@@ -146,7 +146,7 @@ export class WorldScene extends Phaser.Scene {
       p.map = exit.to;
       p.x = exit.spawnX;
       p.y = exit.spawnY;
-      this.scene.restart();
+      this.transition('World');
       return;
     }
     const target = this.nearby();
@@ -163,8 +163,18 @@ export class WorldScene extends Phaser.Scene {
         this.session.state.battlesWon === 0,
       )
     ) {
-      this.scene.start('Battle');
+      this.transition('Battle');
     }
+  }
+  private transition(scene: 'World' | 'Battle') {
+    this.moving = true;
+    const go = () => (scene === 'World' ? this.scene.restart() : this.scene.start(scene));
+    if (reducedMotion()) {
+      go();
+      return;
+    }
+    this.cameras.main.fadeOut(180, 22, 48, 39);
+    this.cameras.main.once('camerafadeoutcomplete', go);
   }
   private nearby(): { label: string; npc?: NpcData; kind?: string } | undefined {
     const p = this.session.state.player;

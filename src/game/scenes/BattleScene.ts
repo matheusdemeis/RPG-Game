@@ -1,13 +1,15 @@
 import * as Phaser from 'phaser';
 import { UI, button } from '../ui/UI';
 import { GameSession } from '../state/GameSession';
-import { BattleSystem } from '../systems/BattleSystem';
+import { BattleSystem, type BattleOutcome } from '../systems/BattleSystem';
 import { createCreature, healParty, stats, xpToNext } from '../systems/CreatureSystem';
 import { species, speciesIds } from '../data/creatures';
 import { moves } from '../data/moves';
 import type { Creature } from '../types';
 import { canCapture, captureChance } from '../systems/CaptureSystem';
 import { reducedMotion } from '../art/motion';
+import { drawBattlefield } from '../art/battlefield';
+import { BattleEffects } from '../ui/BattleEffects';
 
 export class BattleScene extends Phaser.Scene {
   protected ui = new UI();
@@ -17,6 +19,12 @@ export class BattleScene extends Phaser.Scene {
   private wildSprite!: Phaser.GameObjects.Image;
   private busy = false;
   private message = '';
+  private displayPlayer!: Creature;
+  private displayWild!: Creature;
+  private shownOutcome: BattleOutcome = 'active';
+  private effects!: BattleEffects;
+  private selectedMove = '';
+  private turn = 1;
   constructor() {
     super('Battle');
   }
@@ -33,25 +41,38 @@ export class BattleScene extends Phaser.Scene {
     const wild = createCreature(speciesIds[Phaser.Math.Between(0, 2)]!, level);
     this.battle = new BattleSystem(this.session.state, wild);
     this.busy = false;
-    this.drawClearing();
+    this.displayPlayer = { ...this.battle.player };
+    this.displayWild = { ...wild };
+    this.shownOutcome = 'active';
+    this.selectedMove = '';
+    this.turn = 1;
+    drawBattlefield(this);
     this.playerSprite = this.add
       .image(260, 368, this.battle.player.species)
       .setScale(6)
-      .setOrigin(0.5, 1);
+      .setOrigin(0.5, 0.82);
     this.wildSprite = this.add
       .image(700, 246, wild.species)
       .setScale(4.6)
-      .setOrigin(0.5, 1)
+      .setOrigin(0.5, 0.82)
       .setFlipX(true);
     if (!reducedMotion())
-      this.tweens.add({
-        targets: [this.playerSprite, this.wildSprite],
-        y: '-=5',
-        duration: 1600,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
+      for (const sprite of [this.playerSprite, this.wildSprite])
+        this.tweens.add({
+          targets: sprite,
+          scaleY: '-=0.06',
+          duration: 1600,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+        });
+    this.effects = new BattleEffects(this, { player: this.playerSprite, wild: this.wildSprite });
+    if (!reducedMotion()) {
+      this.playerSprite.setX(215);
+      this.wildSprite.setX(745);
+      this.tweens.add({ targets: this.playerSprite, x: 260, duration: 460, ease: 'Cubic.easeOut' });
+      this.tweens.add({ targets: this.wildSprite, x: 700, duration: 460, ease: 'Cubic.easeOut' });
+    }
     this.message = `A wild ${species[wild.species].name} emerges from the whispering grass!`;
     this.cameras.main.fadeIn(reducedMotion() ? 0 : 350, 24, 51, 40);
     this.render();
@@ -66,49 +87,18 @@ export class BattleScene extends Phaser.Scene {
     if (this.busy) return;
     const index = Number(event.key) - 1;
     if (index >= 0 && index < 4 && this.battle.outcome === 'active')
-      this.play(this.battle.act(species[this.battle.player.species].moves[index]!));
-    if (event.key === 'Escape' && this.battle.outcome === 'active') this.play(this.battle.flee());
+      this.chooseMove(species[this.battle.player.species].moves[index]!);
+    if (event.key === 'Escape' && this.battle.outcome === 'active') this.utility('flee');
     if (event.key.toLowerCase() === 'c' && this.battle.outcome === 'active')
-      this.play(this.battle.capture());
-    if (event.key.toLowerCase() === 't' && this.battle.outcome === 'active')
-      this.play(this.battle.tonic());
+      this.utility('capture');
+    if (event.key.toLowerCase() === 't' && this.battle.outcome === 'active') this.utility('tonic');
     if ((event.key === 'e' || event.key === 'E') && this.battle.outcome !== 'active') this.finish();
-  }
-  private drawClearing() {
-    this.cameras.main.setBackgroundColor('#98b4a1');
-    const g = this.add.graphics();
-    g.fillStyle(0xb7cbb0);
-    g.fillRect(0, 0, 960, 180);
-    g.fillStyle(0x7c9a7c);
-    g.fillRect(0, 180, 960, 420);
-    for (let i = 0; i < 18; i++)
-      this.add
-        .image(i * 68 - 30, 185 + (i % 3) * 10, 'tree')
-        .setScale(1.6)
-        .setTint(0x7c9b87);
-    g.fillStyle(0xa0b287);
-    g.fillEllipse(690, 237, 338, 90);
-    g.fillStyle(0x526f53);
-    g.fillEllipse(256, 367, 360, 90);
-    g.fillStyle(0x8eaa74);
-    g.fillEllipse(256, 355, 360, 82);
-    // Draw foreground platforms after the distant tree line.
-    const platforms = this.add.graphics();
-    platforms.fillStyle(0xa3b486);
-    platforms.fillEllipse(700, 240, 330, 72);
-    platforms.fillStyle(0x91a775);
-    platforms.fillEllipse(260, 364, 360, 80);
-    for (let i = 0; i < 28; i++) {
-      const x = (i * 137) % 960,
-        y = 270 + ((i * 31) % 140);
-      this.add.image(x, y, 'mote').setAlpha(0.4);
-    }
   }
   private status(c: Creature, side: 'ally' | 'enemy') {
     const def = species[c.species],
       max = stats(c).hp,
       ratio = c.hp / max;
-    return `<section class="battle-status ${side}" aria-label="${side === 'ally' ? 'Your' : 'Wild'} ${def.name}"><div><strong>${def.name}</strong><span>Lv. ${c.level}</span></div><small class="type ${def.element.toLowerCase()}">${def.element}</small><div class="hp-row"><span>HP</span><div class="hp-track"><i style="width:${ratio * 100}%;background:${ratio < 0.25 ? '#ce785f' : ratio < 0.5 ? '#d2b26a' : '#88b77b'}"></i></div><b>${c.hp} / ${max}</b></div>${side === 'ally' ? `<div class="xp-track"><i style="width:${(c.xp / xpToNext(c.level)) * 100}%"></i></div>` : ''}</section>`;
+    return `<section class="battle-status ${side}" data-health="${side === 'ally' ? 'player' : 'wild'}" aria-label="${side === 'ally' ? 'Your' : 'Wild'} ${def.name}"><div><strong>${def.name}</strong><span>Lv. ${c.level}</span></div><small class="type ${def.element.toLowerCase()}">${def.element}</small><div class="hp-row"><span>HP</span><div class="hp-track" role="progressbar" aria-label="${def.name} health" aria-valuenow="${c.hp}" aria-valuemax="${max}" aria-valuemin="0"><i style="width:${ratio * 100}%;background:${ratio < 0.25 ? '#ce785f' : ratio < 0.5 ? '#d2b26a' : '#88b77b'}"></i></div><b class="hp-value">${c.hp} / ${max}</b></div>${side === 'ally' ? `<div class="xp-track"><i style="width:${(c.xp / xpToNext(c.level)) * 100}%"></i></div>` : ''}</section>`;
   }
   protected extraActions(): string {
     const chance = Math.round(captureChance(this.battle.wild) * 100);
@@ -116,18 +106,18 @@ export class BattleScene extends Phaser.Scene {
   }
   protected bindExtraActions() {
     this.ui.on('capture', () => {
-      if (!this.busy) this.play(this.battle.capture());
+      if (!this.busy) this.utility('capture');
     });
     this.ui.on('tonic', () => {
-      if (!this.busy) this.play(this.battle.tonic());
+      if (!this.busy) this.utility('tonic');
     });
   }
   protected render() {
-    const active = this.battle.outcome === 'active',
+    const active = this.shownOutcome === 'active',
       disabled = this.busy ? 'disabled' : '';
-    this.playerSprite.setTexture(this.battle.player.species);
+    this.playerSprite.setTexture(this.displayPlayer.species);
     this.ui.render(
-      `<div class="battle-heading"><span>WHISPERING TRAIL</span><b>Wild encounter</b></div>${this.status(this.battle.wild, 'enemy')}${this.status(this.battle.player, 'ally')}<section class="battle-console"><div class="battle-message" role="status" aria-live="polite"><small>${active ? 'MAKE YOUR MOVE' : this.battle.outcome === 'victory' ? 'A LITTLE STRONGER' : 'THE JOURNEY CONTINUES'}</small><p>${this.message}</p><div class="battle-tools">${active ? `${this.extraActions()}${button('run', 'Leave <kbd>Esc</kbd>', disabled)}` : ''}</div></div><div class="move-grid">${
+      `<div class="battle-heading"><span>WHISPERING TRAIL</span><b>Wild encounter</b><small>TURN ${String(this.turn).padStart(2, '0')}</small></div>${this.status(this.displayWild, 'enemy')}${this.status(this.displayPlayer, 'ally')}<section class="battle-console"><div class="battle-message" role="status" aria-live="polite"><small>${this.busy ? 'THE FOREST LISTENS' : active ? 'CHOOSE YOUR NEXT MOVE' : this.shownOutcome === 'victory' ? 'A LITTLE STRONGER' : this.shownOutcome === 'captured' ? 'A NEW COMPANION' : 'THE JOURNEY CONTINUES'}</small><p>${this.message}</p><div class="battle-tools">${active ? `${this.extraActions()}${button('run', 'Leave <kbd>Esc</kbd>', disabled)}` : ''}</div></div><div class="move-grid">${
         active
           ? species[this.battle.player.species].moves
               .map((id, i) => {
@@ -135,7 +125,7 @@ export class BattleScene extends Phaser.Scene {
                 return button(
                   `move-${id}`,
                   `<span>${i + 1} <b>${m.name}</b></span><small>${m.kind === 'restore' ? 'RECOVER 30% HP' : `${m.element ?? 'Neutral'} · ${m.power} power · ${m.accuracy * 100}%`}</small>`,
-                  `class="move ${m.element?.toLowerCase() ?? 'neutral'}" title="${m.description}" ${disabled}`,
+                  `class="move ${m.element?.toLowerCase() ?? 'neutral'} ${this.selectedMove === id ? 'selected' : ''}" title="${m.description}" ${disabled}`,
                 );
               })
               .join('')
@@ -148,35 +138,61 @@ export class BattleScene extends Phaser.Scene {
     );
     for (const id of species[this.battle.player.species].moves)
       this.ui.on(`move-${id}`, () => {
-        if (!this.busy) this.play(this.battle.act(id));
+        if (!this.busy) this.chooseMove(id);
       });
     this.ui.on('run', () => {
-      if (!this.busy) this.play(this.battle.flee());
+      if (!this.busy) this.utility('flee');
     });
     this.ui.on('finish', () => this.finish());
     this.bindExtraActions();
   }
+  private utility(action: 'flee' | 'capture' | 'tonic') {
+    this.selectedMove = '';
+    this.play(this.battle[action]());
+  }
+  private chooseMove(id: string) {
+    this.selectedMove = id;
+    this.play(this.battle.act(id));
+  }
   protected play(lines: string[]) {
-    if (!lines.length) return;
+    if (!lines.length || this.busy) return;
     this.busy = true;
-    if (!reducedMotion())
-      this.tweens.add({
-        targets: this.wildSprite,
-        alpha: 0.35,
-        duration: 90,
-        yoyo: true,
-        repeat: 1,
-      });
+    const events = [...this.battle.events];
     let index = 0;
     const next = () => {
-      this.message = lines[index++]!;
+      const event = events[index++];
+      if (!event) {
+        this.busy = false;
+        this.shownOutcome = this.battle.outcome;
+        this.turn++;
+        this.render();
+        return;
+      }
+      const previousPlayer = this.displayPlayer,
+        previousWild = this.displayWild;
+      this.displayPlayer = event.player;
+      this.displayWild = event.wild;
+      this.shownOutcome = event.outcome;
+      this.message = event.text;
       this.render();
-      if (index < lines.length) this.time.delayedCall(700, next);
-      else
-        this.time.delayedCall(450, () => {
+      this.effects.health(this.ui.root, 'player', previousPlayer, this.displayPlayer);
+      this.effects.health(this.ui.root, 'wild', previousWild, this.displayWild);
+      this.effects.play(event);
+      const delay = Math.min(1800, Math.max(950, event.text.length * 18));
+      this.time.delayedCall(delay, () => {
+        if (index < events.length) next();
+        else {
           this.busy = false;
+          this.shownOutcome = this.battle.outcome;
+          this.turn++;
           this.render();
-        });
+          const selector =
+            this.shownOutcome === 'active'
+              ? `[data-action="move-${this.selectedMove}"]`
+              : '[data-action="finish"]';
+          this.ui.root.querySelector<HTMLButtonElement>(selector)?.focus({ preventScroll: true });
+        }
+      });
     };
     next();
   }

@@ -743,3 +743,66 @@ h1 span {
     transition: none !important;
   }
 }
+
+/* Battle controls keep a stable footprint while the narrated turn plays out. */
+.battle-heading > small {
+  display: block;
+  margin-top: 0.85em;
+  font-size: 0.6em;
+  letter-spacing: 0.16em;
+  color: #4d6c54;
+}
+.battle-console {
+  border-top: 2px solid #c7bc8b;
+  background: linear-gradient(135deg, #193d35, #112f2b);
+  box-shadow: 0 -5px 0 #1b3d3344;
+}
+.battle-status {
+  background: linear-gradient(135deg, #f3ecd5f5, #deddbcf5);
+  box-shadow:
+    3px 4px 0 #24473445,
+    inset 0 0 0 3px #fff7dd55;
+  border-radius: 2px;
+}
+.battle-status .hp-track {
+  height: 0.65em;
+  border: 1px solid #778d6555;
+}
+.battle-status .hp-track i {
+  transition: none;
+  box-shadow: inset 0 2px 0 #e5f1b94d;
+}
+.move {
+  position: relative;
+  border-color: #78957566;
+  box-shadow: inset 0 1px 0 #b8c49c1f;
+}
+.move:hover:not(:disabled),
+.move:focus-visible {
+  background: #3c6250;
+  border-color: #d5c18d;
+}
+.move.selected {
+  background: #3b5f4d;
+  box-shadow: inset 0 0 0 1px #d5c18d;
+}
+.move:disabled {
+  opacity: 0.65;
+}
+.move.selected:disabled {
+  opacity: 1;
+}
+.battle-tools button {
+  white-space: nowrap;
+}
+.battle-message p {
+  font-size: 1.1em;
+  min-height: 3em;
+}
+.finish::after {
+  content: 'E to continue';
+  display: block;
+  margin-top: 0.6em;
+  font-size: 0.7em;
+  font-weight: normal;
+}

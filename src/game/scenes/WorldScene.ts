@@ -364,14 +364,21 @@ export class WorldScene extends Phaser.Scene {
     this.ui.on('menu', () => this.openMenu());
   }
   protected renderDialogue() {
+    const npc = this.area.npcs.find((n) => n.name === this.dialogue.speaker);
+    const portrait = npc
+      ? `${npc.skin}-down-0`
+      : this.dialogue.speaker === 'Trail sign'
+        ? 'sign'
+        : 'crystal';
     this.ui.render(
-      `${this.hud()}<section class="dialogue" role="dialog" aria-label="Conversation with ${this.dialogue.speaker}"><div class="speaker">${this.dialogue.speaker}</div><p aria-live="polite">${this.dialogue.text}</p>${button('advance', `${this.dialogue.last ? 'Continue' : 'Next'} <kbd>E</kbd>`)}</section>`,
+      `${this.hud()}<section class="dialogue" role="dialog" aria-label="Conversation with ${this.dialogue.speaker}"><div class="speaker">${this.dialogue.speaker}</div><div class="dialogue-portrait"><img src="${this.textures.getBase64(portrait)}" alt=""></div><div class="dialogue-body"><p aria-live="polite">${this.dialogue.text}</p><div class="dialogue-footer"><small>${this.dialogue.progress}</small>${button('advance', `${this.dialogue.last ? 'Continue' : 'Next'} <kbd>E / Space</kbd> <span>▸</span>`)}</div></div></section>`,
     );
     this.ui.on('advance', () => {
       this.dialogue.advance();
       if (this.dialogue.active) this.renderDialogue();
       else if (!this.modal) this.renderHud();
     });
+    this.ui.focus();
   }
   protected openMenu() {
     if (this.moving || this.dialogue.active) return;

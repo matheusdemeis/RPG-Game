@@ -2,10 +2,14 @@ export class UI {
   readonly root = document.querySelector<HTMLDivElement>('#ui')!;
   private controller = new AbortController();
   render(html: string) {
+    const focused =
+      document.activeElement instanceof HTMLElement && this.root.contains(document.activeElement)
+        ? document.activeElement.dataset.action
+        : undefined;
     this.controller.abort();
     this.controller = new AbortController();
     this.root.innerHTML = html;
-    const dialog = this.root.querySelector<HTMLElement>('.modal');
+    const dialog = this.root.querySelector<HTMLElement>('.modal, .dialogue');
     if (dialog) {
       dialog.setAttribute('role', 'dialog');
       dialog.setAttribute('aria-modal', 'true');
@@ -32,6 +36,10 @@ export class UI {
         { signal: this.controller.signal },
       );
     }
+    if (focused)
+      this.root
+        .querySelector<HTMLButtonElement>(`[data-action="${focused}"]:not(:disabled)`)
+        ?.focus({ preventScroll: true });
   }
   on(action: string, callback: () => void) {
     this.root.querySelectorAll<HTMLButtonElement>(`[data-action="${action}"]`).forEach((button) => {
@@ -39,9 +47,10 @@ export class UI {
     });
   }
   focus() {
+    if (this.root.contains(document.activeElement)) return;
     this.root
       .querySelector<HTMLButtonElement>(
-        '.modal button:not(:disabled), .title-menu button:not(:disabled)',
+        '.modal button:not(:disabled), .title-menu button:not(:disabled), .dialogue button:not(:disabled)',
       )
       ?.focus({ preventScroll: true });
   }

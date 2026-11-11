@@ -69,37 +69,39 @@ export function generateTextures(scene: Phaser.Scene) {
     }
   });
   make(scene, 'tree', 80, 104, (c) => {
-    rect(c, '#43674c', 12, 86, 60, 10);
-    rect(c, '#4d4935', 32, 62, 15, 32);
-    rect(c, '#827047', 35, 66, 6, 25);
-    const clusters = [
-      [16, 39, 48, 39],
-      [5, 32, 68, 34],
-      [12, 17, 56, 35],
-      [23, 6, 34, 30],
-      [9, 51, 62, 22],
-    ];
-    for (const [x, y, w, h] of clusters) {
-      rect(c, '#234f42', x!, y!, w!, h!);
-      rect(c, '#396c4e', x! + 3, y! + 2, w! - 8, h! - 7);
+    rect(c, '#4a4935', 33, 62, 14, 33);
+    rect(c, '#8c7950', 35, 66, 5, 25);
+    rect(c, '#b09a60', 35, 72, 2, 12);
+    rect(c, '#655c3e', 29, 92, 23, 3);
+    poly(c, '#6e6743', [
+      [36, 78],
+      [25, 64],
+      [29, 60],
+      [40, 74],
+    ]);
+    // Stepped foliage clusters keep the silhouette organic at native pixel resolution.
+    const crown = (x: number, y: number, w: number, h: number, color: string) => {
+      rect(c, color, x + 8, y, w - 16, h);
+      rect(c, color, x + 3, y + 5, w - 6, h - 10);
+      rect(c, color, x, y + 10, w, h - 20);
+    };
+    crown(5, 24, 70, 55, '#254f3e');
+    crown(12, 12, 56, 59, '#315f43');
+    crown(22, 4, 37, 52, '#3e714a');
+    crown(7, 33, 40, 34, '#477c4e');
+    crown(35, 23, 36, 37, '#42744a');
+    crown(16, 16, 34, 32, '#5b8b53');
+    crown(27, 6, 27, 29, '#6b9759');
+    for (let i = 0; i < 32; i++) {
+      const x = 12 + ((i * 17) % 55),
+        y = 19 + ((i * 13) % 47);
+      if ((x - 40) ** 2 / 1000 + (y - 42) ** 2 / 850 > 1) continue;
+      rect(c, i % 3 === 0 ? '#88a962' : i % 3 === 1 ? '#537e4c' : '#366445', x, y, 5 + (i % 4), 3);
+      if (i % 3 === 0) rect(c, '#a2b876', x, y, 3, 1);
     }
-    for (const [x, y, w, h] of [
-      [25, 10, 28, 12],
-      [15, 23, 33, 9],
-      [10, 37, 25, 10],
-      [37, 30, 26, 9],
-      [22, 51, 37, 10],
-    ])
-      rect(c, '#58875a', x!, y!, w!, h!);
-    for (const [x, y] of [
-      [28, 11],
-      [18, 24],
-      [14, 39],
-      [39, 33],
-      [27, 54],
-    ])
-      rect(c, '#80a263', x!, y!, 10, 3);
-    rect(c, '#a6b776', 30, 8, 11, 3);
+    rect(c, '#adc184', 31, 9, 8, 2);
+    rect(c, '#91ad69', 20, 23, 7, 2);
+    rect(c, '#254f3e', 43, 74, 14, 3);
   });
   for (const kind of ['house', 'lab'])
     make(scene, kind, kind === 'lab' ? 192 : 160, kind === 'lab' ? 206 : 174, (c) => {
@@ -149,6 +151,30 @@ export function generateTextures(scene: Phaser.Scene) {
       rect(c, '#d6bc7e', w / 2 + 5, h - 43, 3, 3);
       rect(c, '#a9a38a', w / 2 - 22, h - 20, 44, 7);
       rect(c, '#c6bda0', w / 2 - 26, h - 13, 52, 6);
+      // Timber joints, masonry, shutters and climbing foliage distinguish each cottage.
+      rect(c, '#bba67e', 16, 88, w - 32, 3);
+      rect(c, '#565945', 14, 83, w - 28, 4);
+      for (let x = 22; x < w - 24; x += 18) {
+        rect(c, '#9a9477', x, h - 30, 13, 1);
+        rect(c, '#847e64', x + 11, h - 29, 1, 8);
+      }
+      for (const x of [31, w - 56]) {
+        rect(c, '#586f5b', x - 9, 102, 5, 25);
+        rect(c, '#7d9270', x - 8, 103, 2, 21);
+        rect(c, '#586f5b', x + 27, 102, 5, 25);
+        rect(c, '#e4cb87', x + 3, 119, 6, 6);
+        rect(c, '#f4dd9f', x + 3, 119, 3, 2);
+      }
+      for (let n = 0; n < 7; n++) {
+        const vx = w - 23 + (n % 2) * 4,
+          vy = h - 34 - n * 8;
+        rect(c, '#4f724b', vx, vy, 3, 12);
+        rect(c, '#789658', vx - 4, vy + 1, 6, 4);
+        if (n % 3 === 0) rect(c, '#d5b28d', vx - 2, vy, 2, 2);
+      }
+      rect(c, '#514b3b', w / 2 - 8, h - 59, 1, 34);
+      rect(c, '#b39a68', w / 2 - 5, h - 57, 2, 29);
+      rect(c, '#746b50', w / 2 - 19, h - 19, 38, 2);
       if (kind === 'lab') {
         rect(c, '#294f4f', w / 2 - 24, 92, 48, 17);
         rect(c, '#a5cbba', w / 2 - 3, 95, 6, 11);

@@ -37,7 +37,7 @@ export class UI {
       );
     }
     if (focused)
-      this.root
+      (dialog ?? this.root)
         .querySelector<HTMLButtonElement>(`[data-action="${focused}"]:not(:disabled)`)
         ?.focus({ preventScroll: true });
   }
@@ -47,10 +47,12 @@ export class UI {
     });
   }
   focus() {
-    if (this.root.contains(document.activeElement)) return;
-    this.root
+    const dialog = this.root.querySelector<HTMLElement>('.modal, .dialogue');
+    const scope = dialog ?? this.root;
+    if (scope.contains(document.activeElement)) return;
+    scope
       .querySelector<HTMLButtonElement>(
-        '.modal button:not(:disabled), .title-menu button:not(:disabled), .dialogue button:not(:disabled)',
+        dialog ? 'button:not(:disabled)' : '.title-menu button:not(:disabled)',
       )
       ?.focus({ preventScroll: true });
   }
